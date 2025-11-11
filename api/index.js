@@ -142,6 +142,14 @@ app.post("/leiloes/interesse/:usuarioId/:leilaoId", (req, res) => {
         timestamp: new Date().toISOString() 
     });
 
+    const keepAlive = setInterval(() => {
+        try {
+            res.write(':\n\n');
+        } catch (e) {
+            clearInterval(keepAlive);
+        }
+    }, 25000);
+
     return res.status(200).json({ 
         message: "Interesse registrado com sucesso",
         leilaoId, 
