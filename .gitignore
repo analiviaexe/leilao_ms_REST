@@ -1,0 +1,36 @@
+# Node modules
+node_modules/
+**/node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+
+# Build output
+dist/
+build/
+
+# Coverage
+coverage/
+
+# Misc
+*.log
+
+# Python env (in case leilao_ms has virtualenv)
+venv/
+__pycache__/
+*.pyc
