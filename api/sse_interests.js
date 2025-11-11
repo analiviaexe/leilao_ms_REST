@@ -1,108 +1,143 @@
-const interesses = new Map();
+// Armazena conexões SSE: userId -> response object
 const sseClients = new Map();
 
-function getInteresses(leilaoId) {
-  return interesses.get(leilaoId) || [];
+// Armazena interesses: userId -> Set de leilaoIds
+const userInterests = new Map();
+
+/**
+ * Registra conexão SSE de um usuário (canal único)
+ */
+function registerUserSSE(usuarioId, res) {
+  sseClients.set(usuarioId, res);
+  
+  // Inicializa Set de interesses se não existir
+  if (!userInterests.has(usuarioId)) {
+    userInterests.set(usuarioId, new Set());
+  }
+  
+  console.log(`[SSE] Usuário ${usuarioId} conectado`);
 }
 
-function addInteresse(leilaoId, usuarioId) {
-  const list = getInteresses(leilaoId);
-  if (!list.includes(usuarioId)) {
-    list.push(usuarioId);
-    interesses.set(leilaoId, list);
+/**
+ * Remove conexão SSE de um usuário
+ */
+function unregisterUserSSE(usuarioId) {
+  sseClients.delete(usuarioId);
+  console.log(`[SSE] Usuário ${usuarioId} desconectado`);
+}
+
+/**
+ * Adiciona interesse de um usuário em um leilão
+ */
+function addInteresse(usuarioId, leilaoId) {
+  if (!userInterests.has(usuarioId)) {
+    userInterests.set(usuarioId, new Set());
+  }
+  userInterests.get(usuarioId).add(leilaoId);
+  console.log(`[SSE] Usuário ${usuarioId} agora acompanha leilão ${leilaoId}`);
+}
+
+/**
+ * Remove interesse de um usuário em um leilão
+ */
+function removeInteresse(usuarioId, leilaoId) {
+  if (userInterests.has(usuarioId)) {
+    userInterests.get(usuarioId).delete(leilaoId);
+    console.log(`[SSE] Usuário ${usuarioId} parou de acompanhar leilão ${leilaoId}`);
   }
 }
 
-function removeInteresse(leilaoId, usuarioId) {
-  const list = getInteresses(leilaoId).filter(u => u !== usuarioId);
-  if (list.length > 0) {
-    interesses.set(leilaoId, list);
-  } else {
-    interesses.delete(leilaoId);
-  }
+/**
+ * Verifica se usuário tem interesse em um leilão
+ */
+function hasInterest(usuarioId, leilaoId) {
+  return userInterests.has(usuarioId) && userInterests.get(usuarioId).has(leilaoId);
 }
 
+/**
+ * Retorna todos os usuários interessados em um leilão
+ */
+function getUsersInterestedIn(leilaoId) {
+  const users = [];
+  for (const [userId, leiloes] of userInterests.entries()) {
+    if (leiloes.has(leilaoId)) {
+      users.push(userId);
+    }
+  }
+  return users;
+}
+
+/**
+ * Envia evento SSE para um usuário específico
+ */
 function sendSse(usuarioId, eventName, data) {
   const res = sseClients.get(usuarioId);
-  if (!res) return false;
+  if (!res) {
+    console.log(`[SSE] Usuário ${usuarioId} não tem conexão SSE ativa`);
+    return false;
+  }
+  
   try {
     res.write(`event: ${eventName}\n`);
     res.write(`data: ${JSON.stringify(data)}\n\n`);
+    console.log(`[SSE] Evento '${eventName}' enviado para usuário ${usuarioId}`);
     return true;
   } catch (err) {
-    console.error(`Erro ao enviar SSE para ${usuarioId}:`, err.message);
+    console.error(`[SSE] Erro ao enviar para ${usuarioId}:`, err.message);
+    sseClients.delete(usuarioId);
     return false;
   }
 }
 
-// abre a conexão SSE na mesma requisição de registro
-function openInterestStream(leilaoId, usuarioId, req, res) {
-  res.set({
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    Connection: 'keep-alive'
-  });
-  res.flushHeaders();
-
-  res.write(`: conectado ao interesse ${leilaoId}\n\n`);
-
-  addInteresse(leilaoId, usuarioId);
-  sseClients.set(usuarioId, res);
-  console.log(`Interesse registrado e SSE aberto para usuario ${usuarioId} no leilao ${leilaoId}`);
-
-  const ack = { event: 'interesse_registrado', leilaoId, usuarioId };
-  res.write(`event: interesse_registrado\n`);
-  res.write(`data: ${JSON.stringify(ack)}\n\n`);
-
-  const keepAlive = setInterval(() => {
-    try { res.write(':\n\n'); } catch (e) { /* ignore */ }
-  }, 25000);
-
-  req.on('close', () => {
-    clearInterval(keepAlive);
-    sseClients.delete(usuarioId);
-    removeInteresse(leilaoId, usuarioId);
-    console.log(`Conexao SSE fechada para usuario ${usuarioId}; interesse removido do leilao ${leilaoId}`);
-  });
-
-  return { usuarioId, leilaoId };
+/**
+ * Notifica todos os usuários interessados em um leilão
+ * (Filtra apenas quem registrou interesse)
+ */
+function notifyLeilaoEvent(leilaoId, eventName, data) {
+  const interestedUsers = getUsersInterestedIn(leilaoId);
+  
+  if (interestedUsers.length === 0) {
+    console.log(`[SSE] Nenhum usuário acompanhando leilão ${leilaoId}`);
+    return;
+  }
+  
+  console.log(`[SSE] Notificando ${interestedUsers.length} usuário(s) sobre leilão ${leilaoId}`);
+  
+  for (const userId of interestedUsers) {
+    sendSse(userId, eventName, {
+      leilaoId,
+      ...data
+    });
+  }
 }
 
+/**
+ * Remove conexão SSE de um usuário e limpa seus interesses
+ */
 function closeConnection(usuarioId) {
   const res = sseClients.get(usuarioId);
-  if (!res) return false;
-  try {
-    res.end();
-  } catch (e) {
-    // ignore
+  if (res) {
+    try {
+      res.end();
+    } catch (e) {
+      // ignore
+    }
   }
+  
   sseClients.delete(usuarioId);
+  userInterests.delete(usuarioId);
+  console.log(`[SSE] Conexão e interesses removidos para usuário ${usuarioId}`);
   return true;
 }
 
-// Notifica inscritos via SSE
-async function notifySubscribers(leilaoId, eventPayload) {
-  const subs = getInteresses(leilaoId);
-  if (!subs.length) {
-    console.log(`Nenhum inscrito para leilao ${leilaoId}`);
-    return;
-  }
-  for (const usuarioId of subs) {
-    const sseSent = sendSse(usuarioId, eventPayload.event || 'evento', eventPayload);
-    if (sseSent) {
-      console.log(`SSE enviado para ${usuarioId} sobre leilao ${leilaoId}`);
-    } else {
-      console.log(`Inscrito ${usuarioId} (sem conexão SSE) perderia evento:`, eventPayload);
-    }
-  }
-}
-
 module.exports = {
-  getInteresses,
+  registerUserSSE,
+  unregisterUserSSE,
   addInteresse,
   removeInteresse,
-  openInterestStream,
-  closeConnection,
+  hasInterest,
+  getUsersInterestedIn,
   sendSse,
-  notifySubscribers
+  notifyLeilaoEvent,
+  closeConnection
 };
