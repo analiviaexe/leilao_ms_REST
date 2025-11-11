@@ -3,7 +3,7 @@ import api from "../api";
 export default function AuctionList({ auctions, userId }) {
   const registrar = async (id) => {
     try {
-      await api.post(`/interesse/${userId}/${id}`);
+      await api.post(`/leiloes/interesse/${userId}/${id}`);
       alert("Interesse registrado");
     } catch (err) {
       console.error(err);
@@ -13,7 +13,7 @@ export default function AuctionList({ auctions, userId }) {
 
   const cancelar = async (id) => {
     try {
-      await api.delete(`/interesse/${userId}/${id}`);
+      await api.delete(`/leiloes/interesse/${userId}/${id}`);
       alert("Interesse cancelado");
     } catch (err) {
       console.error(err);

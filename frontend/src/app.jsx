@@ -34,7 +34,7 @@ export default function App() {
 
   const fetchAuctions = async () => {
     try {
-      const res = await api.get("/leiloes");
+      const res = await api.get("/leiloes/ativos");
       setAuctions(res.data);
     } catch (err) {
       console.error(err);
