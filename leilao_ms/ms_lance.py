@@ -1,6 +1,12 @@
 import pika
 import json
+import threading
 from datetime import datetime
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
 
 connection = None
 channel = None
@@ -33,6 +39,29 @@ def conectar_rabbitmq():
         print(f"Erro ao conectar: {e}")
         return None
 
+@app.route('/lances', methods=['POST'])
+def criar_lance():
+    try:
+        dados = request.json
+        lance_id = dados.get('id')
+        
+        lance = {
+            "id": lance_id,
+            "leilao_id": dados.get('leilaoId'),
+            "user_id": dados.get('usuarioId'),
+            "valor": dados.get('valor'),
+            "timestamp": dados.get('data', datetime.now().isoformat())
+        }
+        
+        channel.basic_publish(
+            exchange='leilao',
+            routing_key='lance_realizado',
+            body=json.dumps(lance)
+        )        
+        return jsonify(lance), 202
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def callback_leilao_iniciado(ch, method, properties, body):
     try:
         leilao = json.loads(body)
@@ -61,12 +90,43 @@ def callback_lance_realizado(ch, method, properties, body):
                 
         if leilao_id not in leiloes_ativos:
             print(f"Lance rejeitado: leilão {leilao_id} não está ativo")
+            
+            lance_invalidado = {
+                'leilao_id': leilao_id,
+                'user_id': user_id,
+                'valor': valor,
+                'motivo': 'leilao_nao_ativo',
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            channel.basic_publish(
+                exchange='leilao',
+                routing_key='lance_invalidado',
+                body=json.dumps(lance_invalidado)
+            )
+            
             ch.basic_ack(delivery_tag=method.delivery_tag)
             return
         
         lances_leilao = lances_por_leilao.get(leilao_id, [])
         if lances_leilao and valor <= lances_leilao[-1]['valor']:
-            print(f"Lance rejeitado: valor {valor} não é maior que o último lance")
+            print(f"Lance rejeitado: valor {valor} não é maior que o último lance ({lances_leilao[-1]['valor']})")
+            
+            lance_invalidado = {
+                'leilao_id': leilao_id,
+                'user_id': user_id,
+                'valor': valor,
+                'motivo': 'valor_insuficiente',
+                'ultimo_lance': lances_leilao[-1]['valor'],
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            channel.basic_publish(
+                exchange='leilao',
+                routing_key='lance_invalidado',
+                body=json.dumps(lance_invalidado)
+            )
+            
             ch.basic_ack(delivery_tag=method.delivery_tag)
             return
         
@@ -143,9 +203,7 @@ def iniciar_consumidores(queue_leilao_iniciado):
         auto_ack=False
     )
 
-def main():
-    global running
-    
+def rabbitmq_thread():
     queue_leilao_iniciado = conectar_rabbitmq()
     if not queue_leilao_iniciado:
         print("Erro ao conectar ao RabbitMQ")
@@ -155,15 +213,15 @@ def main():
     
     try:
         channel.start_consuming()
-    except KeyboardInterrupt:
-        running = False
-        try:
-            if channel:
-                channel.stop_consuming()
-            if connection and not connection.is_closed:
-                connection.close()
-        except Exception:
-            pass
+    except Exception:
+        pass
+
+def main():    
+    # Iniciar thread do RabbitMQ
+    threading.Thread(target=rabbitmq_thread, daemon=True).start()
+    
+    # Iniciar servidor Flask
+    app.run(host='0.0.0.0', port=5001, debug=False)
 
 if __name__ == "__main__":
     main()

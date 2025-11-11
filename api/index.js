@@ -7,6 +7,7 @@ const app = express();
 app.use(bodyParser.json());
 
 const LEILAO_MS_URL = "http://localhost:5000";
+const LANCE_MS_URL = "http://localhost:5001";
 
 // Observações / contrato:
 // - POST /leiloes: espera JSON { nome, descricao, valorInicial, inicio, fim }
@@ -129,7 +130,7 @@ app.post("/lances", async (req, res) => {
             data: new Date().toISOString()
         };
 
-        const url = `${LEILAO_MS_URL}/lances`;
+        const url = `${LANCE_MS_URL}/lances`;
         const resp = await axios.post(url, payload, { timeout: 5000 });
 
         // Notificar inscritos sobre novo lance (usando retorno do MS Lance)
@@ -243,6 +244,8 @@ app.post("/events", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`API Gateway listening on port ${PORT}. LEILAO_MS_URL=${LEILAO_MS_URL}`);
+    console.log(`API Gateway listening on port ${PORT}`);
+    console.log(`LEILAO_MS_URL=${LEILAO_MS_URL}`);
+    console.log(`LANCE_MS_URL=${LANCE_MS_URL}`);
 });
 
