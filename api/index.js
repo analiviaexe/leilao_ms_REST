@@ -75,26 +75,6 @@ app.post("/lances", async (req, res) => {
             return res.status(400).json({ error: "Campos obrigatórios: leilaoId, usuarioId, valor" });
         }
 
-        // Validar se o leilão está ativo antes de aceitar o lance
-        try {
-            const leiloesAtivosUrl = `${LEILAO_MS_URL}/leiloes/ativos`;
-            const leiloesResp = await axios.get(leiloesAtivosUrl, { timeout: 3000 });
-            const leiloesAtivos = leiloesResp.data || [];
-            
-            const leilaoAtivo = leiloesAtivos.find(l => l.id === leilaoId);
-            
-            if (!leilaoAtivo) {
-                return res.status(400).json({
-                    error: "Leilão não está ativo",
-                    message: "O leilão não existe, ainda não iniciou ou já foi encerrado",
-                    leilaoId
-                });
-            }
-        } catch (validationErr) {
-            console.error("Erro ao validar status do leilão:", validationErr.message);
-            // Se falhar a validação, deixa passar (fail-safe)
-        }
-
         const payload = {
             id: uuidv4(),
             leilaoId,
@@ -139,15 +119,6 @@ app.get("/sse/:usuarioId", (req, res) => {
     sse.registerUserSSE(usuarioId, res);
     res.write(`: Conectado como usuário ${usuarioId}\n\n`);
     sse.sendSse(usuarioId, 'connected', { usuarioId, timestamp: new Date().toISOString() });
-
-    // verifica conexao a cada 25 segundos
-    const keepAlive = setInterval(() => {
-        try {
-            res.write(':\n\n');
-        } catch (e) {
-            clearInterval(keepAlive);
-        }
-    }, 25000);
 
     req.on('close', () => {
         clearInterval(keepAlive);
