@@ -1,11 +1,6 @@
 import pika
 import json
-import os
 from datetime import datetime
-from Crypto.PublicKey import RSA
-from Crypto.Signature import pkcs1_15
-from Crypto.Hash import SHA256
-import base64
 
 connection = None
 channel = None
@@ -38,30 +33,6 @@ def conectar_rabbitmq():
         print(f"Erro ao conectar: {e}")
         return None
 
-def carregar_chave_publica(user_id):
-    try:
-        with open(f"keys/client_{user_id}_public.pem", "rb") as f:
-            public_key = RSA.import_key(f.read())
-        return public_key
-    except Exception:
-        return None
-
-def verificar_assinatura(lance_data, signature, user_id):
-    try:
-        public_key = carregar_chave_publica(user_id)
-        if not public_key:
-            return False
-
-        message = json.dumps(lance_data, sort_keys=True).encode()
-        hash_obj = SHA256.new(message)
-
-        signature_bytes = base64.b64decode(signature)
-
-        pkcs1_15.new(public_key).verify(hash_obj, signature_bytes)
-        return True
-    except Exception:
-        return False
-
 def callback_leilao_iniciado(ch, method, properties, body):
     try:
         leilao = json.loads(body)
@@ -77,14 +48,10 @@ def callback_leilao_iniciado(ch, method, properties, body):
 
 def callback_lance_realizado(ch, method, properties, body):
     try:
-        dados = json.loads(body)
-
-        signature = dados.pop('assinatura', None)
+        lance_data = json.loads(body)
         
-        lance_data = dados
-        
-        if not lance_data or not signature:
-            print("Lance inválido: dados ou assinatura faltando")
+        if not lance_data:
+            print("Lance inválido: dados faltando")
             ch.basic_ack(delivery_tag=method.delivery_tag)
             return
         
@@ -94,11 +61,6 @@ def callback_lance_realizado(ch, method, properties, body):
                 
         if leilao_id not in leiloes_ativos:
             print(f"Lance rejeitado: leilão {leilao_id} não está ativo")
-            ch.basic_ack(delivery_tag=method.delivery_tag)
-            return
-        
-        if not verificar_assinatura(lance_data, signature, user_id):
-            print(f"Lance rejeitado: assinatura inválida para usuário {user_id}")
             ch.basic_ack(delivery_tag=method.delivery_tag)
             return
         

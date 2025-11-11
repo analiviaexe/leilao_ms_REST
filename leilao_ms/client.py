@@ -1,11 +1,7 @@
 import pika
 import json
-import base64
 import os
 from datetime import datetime
-from Crypto.PublicKey import RSA
-from Crypto.Signature import pkcs1_15
-from Crypto.Hash import SHA256
 import sys
 
 user_id = None
@@ -14,25 +10,7 @@ channel = None
 running = True
 leiloes_ativos = {}
 leiloes_interessado = set()
-private_key = None
-public_key = None
 queue_leilao_iniciado = None
-
-def inicializar_chaves():
-    global private_key, public_key
-    private_key = RSA.generate(2048)
-    public_key = private_key.publickey()
-    salvar_chave_publica()
-
-def salvar_chave_publica():
-    public_pem = public_key.export_key()
-    private_pem = private_key.export_key()
-    
-    if not os.path.exists("keys"):
-        os.makedirs("keys")
-    
-    with open(f"keys/client_{user_id}_public.pem", "wb") as f:
-        f.write(public_pem)
 
 def conectar_rabbitmq():
     global connection, channel, queue_leilao_iniciado
@@ -54,14 +32,6 @@ def conectar_rabbitmq():
     except Exception:
         return False
 
-def assinar_lance(lance_data):
-    message = json.dumps(lance_data, sort_keys=True).encode()
-    hash_obj = SHA256.new(message)
-    
-    signature = pkcs1_15.new(private_key).sign(hash_obj)
-    
-    return base64.b64encode(signature).decode('utf-8')
-
 def publicar_lance(leilao_id, valor):
     try:
         lance_data = {
@@ -70,9 +40,6 @@ def publicar_lance(leilao_id, valor):
             "valor": valor,
             "timestamp": datetime.now().isoformat()
         }
-        
-        assinatura = assinar_lance(lance_data)
-        lance_data["assinatura"] = assinatura
         
         channel.basic_publish(
             exchange='leilao',
@@ -221,23 +188,10 @@ def parar():
     running = False
     if connection and not connection.is_closed:
         connection.close()
-    
-    try:
-        public_key_file = f"keys/client_{user_id}_public.pem"
-        private_key_file = f"keys/client_{user_id}_private.pem"
-        
-        if os.path.exists(public_key_file):
-            os.remove(public_key_file)
-        if os.path.exists(private_key_file):
-            os.remove(private_key_file)
-    except Exception as e:
-        print(f"Erro ao remover chaves: {e}")
 
 def main():
     global user_id      
     user_id = sys.argv[1]
-    
-    inicializar_chaves()
     
     if not conectar_rabbitmq():
         print("Erro ao conectar ao RabbitMQ")
