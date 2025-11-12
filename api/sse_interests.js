@@ -66,7 +66,7 @@ function sendSse(usuarioId, eventName, data) {
   try {
     res.write(`event: ${eventName}\n`);
     res.write(`data: ${JSON.stringify(data)}\n\n`);
-    console.log(`evento '${eventName}' enviado para usuário ${usuarioId}`);
+    console.log(`evento '${eventName}' enviado para usuario ${usuarioId}`);
     return true;
   } catch (err) {
     console.error(`erro ao enviar para ${usuarioId}:`, err.message);
@@ -79,7 +79,7 @@ function notifyLeilaoEvent(leilaoId, eventName, data) {
   const interestedUsers = getUsersInterestedIn(leilaoId);
   
   if (interestedUsers.length === 0) {
-    console.log(`nenhum usuário acompanhando leilão ${leilaoId}`);
+    console.log(`nenhum usuario acompanhando leilão ${leilaoId}`);
     return;
   }
     
