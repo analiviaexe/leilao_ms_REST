@@ -1,107 +1,149 @@
+import pika, json, threading, requests
 from flask import Flask, request, jsonify
-import pika
-import json
-import threading
-import requests
-import time
-import os
+from flask_cors import CORS
+from datetime import datetime
 
-RABBIT_URL = os.getenv("RABBIT_URL", "amqp://localhost")
-EXTERNAL_PAYMENT_URL = os.getenv("EXTERNAL_PAYMENT_URL", "http://localhost:4000/pay")
-WEBHOOK_PORT = int(os.getenv("WEBHOOK_PORT", 5001))
-
+# ==============================
+# Configuração básica
+# ==============================
 app = Flask(__name__)
+CORS(app)
 
-connection = None
-channel = None
+RABBITMQ_HOST = "localhost"
+SISTEMA_PAGAMENTO_URL = "http://localhost:7000/criar_transacao"
+WEBHOOK_URL = "http://localhost:5002/webhook_pagamento"
 
-def connect_rabbit():
-    global connection, channel
-    params = pika.URLParameters(RABBIT_URL)
-    connection = pika.BlockingConnection(params)
+
+# ==============================
+# Conexão com RabbitMQ
+# ==============================
+def conectar_rabbitmq():
+    connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
     channel = connection.channel()
-    channel.exchange_declare(exchange='leilao', exchange_type='direct', durable=False)
-    q = channel.queue_declare(queue='', exclusive=True)
-    queue_name = q.method.queue
-    channel.queue_bind(exchange='leilao', queue=queue_name, routing_key='leilao_vencedor')
+    channel.exchange_declare(exchange='leilao', exchange_type='direct')
+    channel.queue_declare(queue='leilao_vencedor', durable=True)
+    channel.queue_bind(exchange='leilao', queue='leilao_vencedor', routing_key='leilao_vencedor')
+    return connection, channel
 
-    def callback(ch, method, properties, body):
-        try:
-            evento = json.loads(body.decode())
-            print(f"[ms_pagamento] Evento leilao_vencedor recebido: {evento}")
-            handle_leilao_vencedor(evento)
-        except Exception as e:
-            print("Erro processando leilao_vencedor:", e)
-        finally:
-            ch.basic_ack(delivery_tag=method.delivery_tag)
 
-    channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=False)
-    print("[ms_pagamento] Conectado ao RabbitMQ, aguardando leilao_vencedor...")
-    channel.start_consuming()
+# ==============================
+# Callback: evento leilao_vencedor
+# ==============================
+def callback_leilao_vencedor(ch, method, properties, body):
+    evento = json.loads(body)
+    print("\n==============================")
+    print(f"[1] 🏆 Evento 'leilao_vencedor' recebido do RabbitMQ")
+    print(f"→ Leilão ID: {evento.get('leilao_id')}")
+    print(f"→ Vencedor: {evento.get('vencedor_id')}")
+    print(f"→ Valor final: R$ {evento.get('valor_final')}")
+    print("==============================")
 
-def handle_leilao_vencedor(evento):
-    """
-    evento: { leilao_id, vencedor_id, valor_final, timestamp, ... }
-    Vamos chamar o sistema externo para gerar link de pagamento.
-    """
-    payload = {
-        "leilao_id": evento.get("leilao_id"),
-        "vencedor_id": evento.get("vencedor_id"),
-        "valor": evento.get("valor_final") or evento.get("valor") or evento.get("valor_total"),
-        "user_id": evento.get("vencedor_id")
+    dados_pagamento = {
+        "leilao_id": evento["leilao_id"],
+        "vencedor_id": evento["vencedor_id"],
+        "valor": evento["valor_final"],
+        "webhook_url": WEBHOOK_URL
     }
 
     try:
-        resp = requests.post(EXTERNAL_PAYMENT_URL, json=payload, timeout=5)
-        resp.raise_for_status()
-        data = resp.json()
-        payment_link = data.get("payment_link")
-        transaction_id = data.get("transaction_id")
+        print(f"[2] 🔗 Enviando requisição REST ao sistema externo ({SISTEMA_PAGAMENTO_URL})")
+        resposta = requests.post(SISTEMA_PAGAMENTO_URL, json=dados_pagamento, timeout=5)
+
+        if resposta.status_code != 201:
+            print(f"[❌] Erro: sistema externo retornou código {resposta.status_code}")
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            return
+
+        data = resposta.json()
+        link = data.get("link_pagamento")
+        transacao_id = data.get("transacao_id")
+
+        print(f"[3] ✅ Sistema externo respondeu:")
+        print(f"→ Transação: {transacao_id}")
+        print(f"→ Link de pagamento: {link}")
+
+        # Publicar evento link_pagamento
         evento_link = {
-            "leilao_id": payload["leilao_id"],
-            "vencedor_id": payload["vencedor_id"],
-            "valor": payload["valor"],
-            "payment_link": payment_link,
-            "transaction_id": transaction_id,
-            "user_id": payload.get("user_id")
+            "leilao_id": evento["leilao_id"],
+            "vencedor_id": evento["vencedor_id"],
+            "link": link,
+            "timestamp": datetime.now().isoformat()
         }
-        channel.basic_publish(
+
+        ch.basic_publish(
             exchange='leilao',
             routing_key='link_pagamento',
-            body=json.dumps(evento_link).encode()
+            body=json.dumps(evento_link)
         )
-        print("[ms_pagamento] Publicado link_pagamento:", evento_link)
-    except Exception as e:
-        print("[ms_pagamento] Erro ao chamar sistema externo:", e)
+        print(f"[4] 📢 Evento 'link_pagamento' publicado no RabbitMQ")
+        print(f"→ {evento_link}")
 
-@app.route("/webhook", methods=["POST"])
-def webhook():
-    """
-    Recebe notificações do sistema externo:
-    { transaction_id, status: 'aprovado'|'recusado', valor, user_id, leilao_id }
-    Publica evento 'status_pagamento' no exchange 'leilao' com routing 'status_pagamento'
-    """
-    try:
-        payload = request.get_json()
-        print("[ms_pagamento] Webhook recebido:", payload)
-        event = {
-            "transaction_id": payload.get("transaction_id"),
-            "status": payload.get("status"),
-            "valor": payload.get("valor"),
-            "user_id": payload.get("user_id"),
-            "leilao_id": payload.get("leilao_id")
-        }
-        channel.basic_publish(
-            exchange='leilao',
-            routing_key='status_pagamento',
-            body=json.dumps(event).encode()
-        )
-        return jsonify({"ok": True}), 200
     except Exception as e:
-        print("Erro no webhook:", e)
-        return jsonify({"error": str(e)}), 500
+        print(f"[❌] Erro ao criar pagamento: {e}")
+
+    ch.basic_ack(delivery_tag=method.delivery_tag)
+    print("==============================\n")
+
+
+# ==============================
+# Endpoint de webhook (notificação externa)
+# ==============================
+@app.route('/webhook_pagamento', methods=['POST'])
+def receber_webhook():
+    dados = request.json
+    print("\n==============================")
+    print(f"[5] 📬 Webhook recebido do sistema de pagamento externo")
+    print(f"→ Transação: {dados.get('transacao_id')}")
+    print(f"→ Status: {dados.get('status')}")
+    print(f"→ Valor: R$ {dados.get('valor')}")
+    print("==============================")
+
+    connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
+    channel = connection.channel()
+    channel.exchange_declare(exchange='leilao', exchange_type='direct')
+
+    evento_status = {
+        "leilao_id": dados.get("leilao_id"),
+        "vencedor_id": dados.get("comprador", {}).get("id"),
+        "status": dados.get("status"),
+        "timestamp": datetime.now().isoformat()
+    }
+
+    channel.basic_publish(
+        exchange='leilao',
+        routing_key='status_pagamento',
+        body=json.dumps(evento_status)
+    )
+
+    print(f"[6] 📨 Evento 'status_pagamento' publicado no RabbitMQ")
+    print(f"→ {evento_status}")
+    print("==============================\n")
+
+    connection.close()
+    return jsonify({"message": "Webhook processado com sucesso"}), 200
+
+
+# ==============================
+# Thread de consumo RabbitMQ
+# ==============================
+def consumidor_thread():
+    connection, channel = conectar_rabbitmq()
+    channel.basic_consume(queue='leilao_vencedor', on_message_callback=callback_leilao_vencedor)
+    print("===================================")
+    print("💳 MS_PAGAMENTO")
+    print("→ Aguardando eventos 'leilao_vencedor'...")
+    print("→ Endpoint Webhook: /webhook_pagamento")
+    print("===================================")
+    channel.start_consuming()
+
+
+# ==============================
+# Inicialização
+# ==============================
+def main():
+    threading.Thread(target=consumidor_thread, daemon=True).start()
+    app.run(host="0.0.0.0", port=5002, debug=False)
+
 
 if __name__ == "__main__":
-    t = threading.Thread(target=connect_rabbit, daemon=True)
-    t.start()
-    app.run(host="0.0.0.0", port=WEBHOOK_PORT)
+    main()
