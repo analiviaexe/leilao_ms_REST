@@ -20,7 +20,6 @@ async function conectarRabbitMQ() {
                     const lance = JSON.parse(msg.content.toString());
                     console.log('lance_validado recebido:', lance);
                     
-                    // Notificar clientes interessados no leilão
                     sse.notifyLeilaoEvent(lance.leilao_id, 'novo_lance', {
                         usuarioId: lance.user_id,
                         valor: lance.valor,
@@ -43,7 +42,6 @@ async function conectarRabbitMQ() {
                     const lance = JSON.parse(msg.content.toString());
                     console.log('lance_invalidado recebido:', lance);
                     
-                    // Notificar apenas o usuário que deu o lance inválido
                     sse.sendSse(lance.user_id, 'lance_invalido', {
                         leilaoId: lance.leilao_id,
                         valor: lance.valor,
@@ -67,7 +65,6 @@ async function conectarRabbitMQ() {
                     const evento = JSON.parse(msg.content.toString());
                     console.log('leilao_vencedor recebido:', evento);
                     
-                    // Notificar todos os clientes interessados no leilão
                     sse.notifyLeilaoEvent(evento.leilao_id, 'leilao_vencedor', {
                         vencedorId: evento.vencedor_id,
                         valorFinal: evento.valor_final,

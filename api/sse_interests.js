@@ -11,12 +11,12 @@ function registerUserSSE(usuarioId, res) {
     userInterests.set(usuarioId, new Set());
   }
   
-  console.log(`[SSE] Usuário ${usuarioId} conectado`);
+  console.log(`usuario ${usuarioId} conectado`);
 }
 
 function unregisterUserSSE(usuarioId) {
   sseClients.delete(usuarioId);
-  console.log(`[SSE] Usuário ${usuarioId} desconectado`);
+  console.log(`usuario ${usuarioId} desconectado`);
 }
 
 function addInteresse(usuarioId, leilaoId) {
@@ -24,13 +24,13 @@ function addInteresse(usuarioId, leilaoId) {
     userInterests.set(usuarioId, new Set());
   }
   userInterests.get(usuarioId).add(leilaoId);
-  console.log(`[SSE] Usuário ${usuarioId} agora acompanha leilão ${leilaoId}`);
+  console.log(`usuario ${usuarioId} agora acompanha leilão ${leilaoId}`);
 }
 
 function removeInteresse(usuarioId, leilaoId) {
   if (userInterests.has(usuarioId)) {
     userInterests.get(usuarioId).delete(leilaoId);
-    console.log(`[SSE] Usuário ${usuarioId} parou de acompanhar leilão ${leilaoId}`);
+    console.log(`usuario ${usuarioId} parou de acompanhar leilão ${leilaoId}`);
   }
 }
 
@@ -59,17 +59,17 @@ function getUsersInterestedIn(leilaoId) {
 function sendSse(usuarioId, eventName, data) {
   const res = sseClients.get(usuarioId);
   if (!res) {
-    console.log(`[SSE] Usuário ${usuarioId} não tem conexão SSE ativa`);
+    console.log(`usuario ${usuarioId} não tem conexão SSE ativa`);
     return false;
   }
   
   try {
     res.write(`event: ${eventName}\n`);
     res.write(`data: ${JSON.stringify(data)}\n\n`);
-    console.log(`[SSE] Evento '${eventName}' enviado para usuário ${usuarioId}`);
+    console.log(`evento '${eventName}' enviado para usuário ${usuarioId}`);
     return true;
   } catch (err) {
-    console.error(`[SSE] Erro ao enviar para ${usuarioId}:`, err.message);
+    console.error(`erro ao enviar para ${usuarioId}:`, err.message);
     sseClients.delete(usuarioId);
     return false;
   }
@@ -79,12 +79,10 @@ function notifyLeilaoEvent(leilaoId, eventName, data) {
   const interestedUsers = getUsersInterestedIn(leilaoId);
   
   if (interestedUsers.length === 0) {
-    console.log(`[SSE] Nenhum usuário acompanhando leilão ${leilaoId}`);
+    console.log(`nenhum usuário acompanhando leilão ${leilaoId}`);
     return;
   }
-  
-  console.log(`[SSE] Notificando ${interestedUsers.length} usuário(s) sobre leilão ${leilaoId}`);
-  
+    
   for (const userId of interestedUsers) {
     sendSse(userId, eventName, {
       leilaoId,
@@ -105,7 +103,6 @@ function closeConnection(usuarioId) {
   
   sseClients.delete(usuarioId);
   userInterests.delete(usuarioId);
-  console.log(`[SSE] Conexão e interesses removidos para usuário ${usuarioId}`);
   return true;
 }
 

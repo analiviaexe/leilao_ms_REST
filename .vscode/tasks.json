@@ -1,0 +1,139 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Iniciar todos MS",
+            "dependsOrder": "parallel",
+            "dependsOn": [
+                "MS Lance",
+                "MS Leilao",
+                "MS Pagamento"
+            ],
+            "group": "build",
+        },
+        {
+            "label": "MS Leilao",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "ms_leilao.py"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/leilao_ms"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "new",
+                "group": "microservicos"
+            }
+        },
+        {
+            "label": "MS Lance",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "ms_lance.py"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/leilao_ms"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "new",
+                "group": "microservicos"
+            }
+        },
+        // {
+        //     "label": "MS Notif",
+        //     "type": "shell",
+        //     "command": "python",
+        //     "args": [
+        //         "ms_notif.py"
+        //     ],
+        //     "options": {
+        //         "cwd": "${workspaceFolder}/leilao_ms"
+        //     },
+        //     "presentation": {
+        //         "echo": true,
+        //         "reveal": "always",
+        //         "panel": "new",
+        //         "group": "microservicos"
+        //     }
+        // },
+        {
+            "label": "MS Pagamento",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "ms_pagamento.py"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/leilao_ms"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "new",
+                "group": "microservicos"
+            }
+        },
+        {
+            "label": "API Gateway",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "start"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/api"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "new",
+                "group": "aplicacao"
+            },
+            "isBackground": true
+        },
+        {
+            "label": "Frontend",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "dev"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/frontend"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "new",
+                "group": "aplicacao"
+            },
+            "isBackground": true
+        },
+        {
+            "label": "Iniciar Aplicação Web",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "API Gateway",
+                "Frontend"
+            ]
+        },
+        {
+            "label": "Iniciar Tudo",
+            "dependsOrder": "parallel",
+            "dependsOn": [
+                "Iniciar todos MS",
+                "Iniciar Aplicação Web"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
