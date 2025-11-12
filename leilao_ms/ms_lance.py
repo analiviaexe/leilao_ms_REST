@@ -88,6 +88,7 @@ def callback_lance_realizado(ch, method, properties, body):
         user_id = lance_data.get('user_id')
         valor = lance_data.get('valor')
                 
+        print(leiloes_ativos)
         if leilao_id not in leiloes_ativos:
             print(f"Lance rejeitado: leilão {leilao_id} não está ativo")
             

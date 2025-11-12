@@ -1,0 +1,39 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+}
+
+h1 {
+  font-size: 24px;
+  margin: 0 0 20px 0;
+}
+
+h3 {
+  font-size: 18px;
+  margin: 0 0 10px 0;
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1200px) {
+  div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+}

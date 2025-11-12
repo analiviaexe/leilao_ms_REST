@@ -1,0 +1,15 @@
+﻿div {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+input {
+    padding: 5px;
+    margin: 5px 0;
+    width: 200px;
+}
+
+button {
+    padding: 5px 15px;
+}

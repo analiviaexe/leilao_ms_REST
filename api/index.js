@@ -1,9 +1,19 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const cors = require("cors");
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 
 const app = express();
+
+// CORS configurado para permitir Angular
+app.use(cors({
+    origin: 'http://localhost:4200',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(bodyParser.json());
 
 const LEILAO_MS_URL = "http://localhost:5000";
@@ -48,6 +58,7 @@ app.get("/leiloes/ativos", async (req, res) => {
 
         const results = Array.isArray(resp.data)
             ? resp.data.map(l => ({
+                id: l.id || l.leilaoId,
                 nome: l.nome || l.descricao || l.id,
                 descricao: l.descricao || null,
                 valorInicial: l.valorInicial || l.valor_inicial || l.valor || null,
@@ -120,6 +131,15 @@ app.get("/sse/:usuarioId", (req, res) => {
     res.write(`: Conectado como usuário ${usuarioId}\n\n`);
     sse.sendSse(usuarioId, 'connected', { usuarioId, timestamp: new Date().toISOString() });
 
+    // Keep-alive para manter conexão SSE aberta
+    const keepAlive = setInterval(() => {
+        try {
+            res.write(':\n\n');
+        } catch (e) {
+            clearInterval(keepAlive);
+        }
+    }, 25000);
+
     req.on('close', () => {
         clearInterval(keepAlive);
         sse.unregisterUserSSE(usuarioId);
@@ -141,14 +161,6 @@ app.post("/leiloes/interesse/:usuarioId/:leilaoId", (req, res) => {
         usuarioId,
         timestamp: new Date().toISOString() 
     });
-
-    const keepAlive = setInterval(() => {
-        try {
-            res.write(':\n\n');
-        } catch (e) {
-            clearInterval(keepAlive);
-        }
-    }, 25000);
 
     return res.status(200).json({ 
         message: "Interesse registrado com sucesso",

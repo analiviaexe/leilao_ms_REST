@@ -1,0 +1,14 @@
+<div class="login-container">
+  <h2>Sistema de Leilões</h2>
+  <div class="login-form">
+    <label for="usuarioId">ID do Usuário:</label>
+    <input 
+      id="usuarioId"
+      type="text" 
+      [(ngModel)]="usuarioId" 
+      placeholder="Digite seu ID"
+      (keyup.enter)="entrar()"
+    />
+    <button (click)="entrar()">Entrar</button>
+  </div>
+</div>

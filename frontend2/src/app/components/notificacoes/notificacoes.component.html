@@ -1,0 +1,24 @@
+<div class="notificacoes-container">
+  <div class="header">
+    <h3>Notificações</h3>
+    <div class="status">
+      <span class="indicador" [class.conectado]="conectado"></span>
+      <span class="texto">{{ conectado ? 'Conectado' : 'Desconectado' }}</span>
+    </div>
+  </div>
+  
+  <div class="contador">Total: {{ notificacoes.length }}</div>
+  
+  <p *ngIf="notificacoes.length === 0" class="vazio">
+    Aguardando notificações...
+  </p>
+  
+  <div *ngFor="let notif of notificacoes" class="notificacao-card">
+    <div class="notif-header">
+      <strong class="tipo">{{ notif.tipo }}</strong>
+      <span class="hora">{{ formatarHora(notif.timestamp) }}</span>
+    </div>
+    
+    <div class="mensagem">{{ notif.mensagem }}</div>
+  </div>
+</div>
