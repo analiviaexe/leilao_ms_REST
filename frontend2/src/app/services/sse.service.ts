@@ -76,6 +76,32 @@ export class SseService {
       });
     });
 
+    this.eventSource.addEventListener('link_pagamento', (event: any) => {
+      this.ngZone.run(() => {
+        const dados = JSON.parse(event.data);
+        this.notificacoesSubject.next({
+          tipo: 'link_pagamento',
+          mensagem: `Link de pagamento: ${dados.link}`,
+          ...dados
+        });
+      });
+    });
+
+    this.eventSource.addEventListener('status_pagamento', (event: any) => {
+      this.ngZone.run(() => {
+        const dados = JSON.parse(event.data);
+        const statusMsg = dados.status === 'aprovado' 
+          ? `Pagamento aprovado! Leilão ${dados.leilaoId} - R$ ${dados.valor}`
+          : `Pagamento recusado: ${dados.motivo || 'Erro no processamento'}`;
+        
+        this.notificacoesSubject.next({
+          tipo: 'status_pagamento',
+          mensagem: statusMsg,
+          ...dados
+        });
+      });
+    });
+
     this.eventSource.onerror = (error) => {
       this.ngZone.run(() => {
         this.conectadoSubject.next(false);
