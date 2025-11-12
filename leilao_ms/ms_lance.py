@@ -133,6 +133,7 @@ def callback_lance_realizado(ch, method, properties, body):
         
         lance_validado = {
             'leilao_id': leilao_id,
+            'leilao_nome': leiloes_ativos[leilao_id].get('nome', leilao_id),
             'user_id': user_id,
             'valor': valor,
             'timestamp': datetime.now().isoformat()
@@ -163,6 +164,7 @@ def callback_leilao_finalizado(ch, method, properties, body):
                 
                 evento_vencedor = {
                     'leilao_id': leilao_id,
+                    'leilao_nome': leiloes_ativos[leilao_id].get('nome', leilao_id),
                     'vencedor_id': vencedor['user_id'],
                     'valor_final': vencedor['valor'],
                     'timestamp': datetime.now().isoformat()

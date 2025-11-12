@@ -145,7 +145,7 @@ app.get("/sse/:usuarioId", (req, res) => {
     });
 });
 
-app.post("/leiloes/interesse/:usuarioId/:leilaoId", (req, res) => {
+app.post("/leiloes/interesse/:usuarioId/:leilaoId", async (req, res) => {
     const usuarioId = req.params.usuarioId;
     const leilaoId = req.params.leilaoId;
 
@@ -155,12 +155,27 @@ app.post("/leiloes/interesse/:usuarioId/:leilaoId", (req, res) => {
 
     sse.addInteresse(usuarioId, leilaoId);
     
-    // se n tiver sse conectado
+    // Buscar nome do leilão
+    let leilaoNome = leilaoId;
+    try {
+        const leiloesResp = await axios.get(`${LEILAO_MS_URL}/leiloes/ativos`, { timeout: 2000 });
+        const leilao = Array.isArray(leiloesResp.data) 
+            ? leiloesResp.data.find(l => l.id == leilaoId || l.id === leilaoId)
+            : null;
+        if (leilao && leilao.nome) {
+            leilaoNome = leilao.nome;
+        }
+    } catch (e) {
+        console.log('Não foi possível buscar nome do leilão:', e.message);
+    }
+    
+    // se tiver sse conectado
     if (!sse.isUserConnected(usuarioId)) {
         console.log(`[SSE] Usuário ${usuarioId} precisa conectar SSE`);
     } else {
         sse.sendSse(usuarioId, 'interesse_registrado', { 
             leilaoId, 
+            leilaoNome,
             usuarioId,
             timestamp: new Date().toISOString() 
         });
@@ -169,6 +184,7 @@ app.post("/leiloes/interesse/:usuarioId/:leilaoId", (req, res) => {
     return res.status(200).json({ 
         message: "Interesse registrado com sucesso",
         leilaoId, 
+        leilaoNome,
         usuarioId,
         sseConectado: sse.isUserConnected(usuarioId),
         deveConectarSSE: !sse.isUserConnected(usuarioId)

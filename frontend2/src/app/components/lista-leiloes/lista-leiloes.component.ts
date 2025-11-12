@@ -13,16 +13,30 @@ import { ApiService } from '../../services/api.service';
 export class ListaLeiloesComponent {
   @Input() leiloes: Leilao[] = [];
   @Input() usuarioId: string = '';
-  @Output() interesseRegistrado = new EventEmitter<boolean>();
-  @Output() interesseCancelado = new EventEmitter<boolean>();
+  @Input() sseConectado: boolean = false;
+  @Output() solicitarConexaoSSE = new EventEmitter<void>();
+  @Output() interesseAdicionado = new EventEmitter<void>();
+  @Output() interesseRemovido = new EventEmitter<void>();
 
   constructor(private apiService: ApiService) {}
 
   acompanhar(leilaoId: string): void {
+    if (!this.sseConectado) {
+      this.solicitarConexaoSSE.emit();
+      
+      setTimeout(() => {
+        this.registrarInteresse(leilaoId);
+      }, 1000);
+    } else {
+      this.registrarInteresse(leilaoId);
+    }
+  }
+
+  private registrarInteresse(leilaoId: string): void {
     this.apiService.registrarInteresse(this.usuarioId, leilaoId).subscribe({
       next: (response) => {
         alert('Interesse registrado com sucesso!');
-        this.interesseRegistrado.emit(response.deveConectarSSE);
+        this.interesseAdicionado.emit();
       },
       error: (err) => {
         alert('Erro ao registrar interesse');
@@ -34,7 +48,7 @@ export class ListaLeiloesComponent {
     this.apiService.cancelarInteresse(this.usuarioId, leilaoId).subscribe({
       next: (response) => {
         alert('Você parou de acompanhar este leilão');
-        this.interesseCancelado.emit(response.sseDesconectado);
+        this.interesseRemovido.emit();
       },
       error: (err) => {
         alert('Erro ao cancelar interesse');

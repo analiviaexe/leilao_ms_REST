@@ -36,7 +36,7 @@ export class SseService {
         const dados = JSON.parse(event.data);
         this.notificacoesSubject.next({
           tipo: 'interesse',
-          mensagem: `Acompanhando leilão ${dados.leilaoId}`,
+          mensagem: `Acompanhando leilão ${dados.leilaoNome || dados.leilaoId}`,
           ...dados
         });
       });
@@ -47,7 +47,7 @@ export class SseService {
         const dados = JSON.parse(event.data);
         this.notificacoesSubject.next({
           tipo: 'novo_lance',
-          mensagem: `Novo lance de R$ ${dados.valor} no leilão ${dados.leilaoId}`,
+          mensagem: `Novo lance de R$ ${dados.valor} no leilão "${dados.leilaoNome || dados.leilaoId}"`,
           ...dados
         });
       });
@@ -70,7 +70,7 @@ export class SseService {
         const dados = JSON.parse(event.data);
         this.notificacoesSubject.next({
           tipo: 'leilao_vencedor',
-          mensagem: `Leilão ${dados.leilaoId} finalizado! Vencedor: usuário ${dados.vencedorId} por R$ ${dados.valorFinal}`,
+          mensagem: `Leilão "${dados.leilaoNome || dados.leilaoId}" finalizado! Vencedor: usuário ${dados.vencedorId} por R$ ${dados.valorFinal}`,
           ...dados
         });
       });

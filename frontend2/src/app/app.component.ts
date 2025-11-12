@@ -54,22 +54,22 @@ export class AppComponent implements OnDestroy {
     this.carregarLeiloes();
   }
 
-  onInteresseRegistrado(deveConectarSSE: boolean): void {
-    this.interessesCount++;
-    
-    if (deveConectarSSE && !this.sseConectado) {
+  onSolicitarConexaoSSE(): void {
+    if (!this.sseConectado) {
       this.conectarSSE();
     }
   }
 
-  onInteresseCancelado(sseDesconectado: boolean): void {
+  onInteresseAdicionado(): void {
+    this.interessesCount++;
+  }
+
+  onInteresseRemovido(): void {
     this.interessesCount--;
     
-    if (sseDesconectado) {
-      this.sseConectado = false;
+    if (this.interessesCount <= 0) {
       this.interessesCount = 0;
-      this.notificacoesSubscription?.unsubscribe();
-      this.conexaoSubscription?.unsubscribe();
+      this.desconectarSSE();
     }
   }
 

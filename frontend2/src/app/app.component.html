@@ -22,8 +22,10 @@
       <app-lista-leiloes 
         [leiloes]="leiloes" 
         [usuarioId]="usuarioId"
-        (interesseRegistrado)="onInteresseRegistrado($event)"
-        (interesseCancelado)="onInteresseCancelado($event)">
+        [sseConectado]="sseConectado"
+        (solicitarConexaoSSE)="onSolicitarConexaoSSE()"
+        (interesseAdicionado)="onInteresseAdicionado()"
+        (interesseRemovido)="onInteresseRemovido()">
       </app-lista-leiloes>
     </div>
     

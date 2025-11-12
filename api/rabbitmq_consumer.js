@@ -21,6 +21,7 @@ async function conectarRabbitMQ() {
                     console.log('lance_validado recebido:', lance);
                     
                     sse.notifyLeilaoEvent(lance.leilao_id, 'novo_lance', {
+                        leilaoNome: lance.leilao_nome || lance.leilao_id,
                         usuarioId: lance.user_id,
                         valor: lance.valor,
                         timestamp: lance.timestamp
@@ -66,6 +67,7 @@ async function conectarRabbitMQ() {
                     console.log('leilao_vencedor recebido:', evento);
                     
                     sse.notifyLeilaoEvent(evento.leilao_id, 'leilao_vencedor', {
+                        leilaoNome: evento.leilao_nome || evento.leilao_id,
                         vencedorId: evento.vencedor_id,
                         valorFinal: evento.valor_final,
                         timestamp: evento.timestamp
