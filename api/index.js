@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 
-// CORS configurado para permitir Angular
+// config cors
 app.use(cors({
     origin: 'http://localhost:4200',
     credentials: true,
@@ -131,7 +131,6 @@ app.get("/sse/:usuarioId", (req, res) => {
     res.write(`: Conectado como usuário ${usuarioId}\n\n`);
     sse.sendSse(usuarioId, 'connected', { usuarioId, timestamp: new Date().toISOString() });
 
-    // Keep-alive para manter conexão SSE aberta
     const keepAlive = setInterval(() => {
         try {
             res.write(':\n\n');
@@ -156,16 +155,23 @@ app.post("/leiloes/interesse/:usuarioId/:leilaoId", (req, res) => {
 
     sse.addInteresse(usuarioId, leilaoId);
     
-    sse.sendSse(usuarioId, 'interesse_registrado', { 
-        leilaoId, 
-        usuarioId,
-        timestamp: new Date().toISOString() 
-    });
+    // se n tiver sse conectado
+    if (!sse.isUserConnected(usuarioId)) {
+        console.log(`[SSE] Usuário ${usuarioId} precisa conectar SSE`);
+    } else {
+        sse.sendSse(usuarioId, 'interesse_registrado', { 
+            leilaoId, 
+            usuarioId,
+            timestamp: new Date().toISOString() 
+        });
+    }
 
     return res.status(200).json({ 
         message: "Interesse registrado com sucesso",
         leilaoId, 
-        usuarioId 
+        usuarioId,
+        sseConectado: sse.isUserConnected(usuarioId),
+        deveConectarSSE: !sse.isUserConnected(usuarioId)
     });
 });
 
@@ -179,17 +185,28 @@ app.delete("/leiloes/interesse/:usuarioId/:leilaoId", (req, res) => {
 
     sse.removeInteresse(usuarioId, leilaoId);
     
-    sse.sendSse(usuarioId, 'interesse_cancelado', { 
-        leilaoId, 
-        usuarioId,
-        timestamp: new Date().toISOString() 
-    });
+    // verifica se usr ainda tem algum interesse
+    const temOutrosInteresses = sse.hasAnyInterest(usuarioId);
+    
+    if (sse.isUserConnected(usuarioId)) {
+        sse.sendSse(usuarioId, 'interesse_cancelado', { 
+            leilaoId, 
+            usuarioId,
+            timestamp: new Date().toISOString() 
+        });
+        
+        // Se nao, desconectar SSE automaticamente
+        if (!temOutrosInteresses) {
+            console.log(`[SSE] Usuário ${usuarioId} não tem mais interesses, fechando conexão SSE`);
+            sse.closeConnection(usuarioId);
+        }
+    }
 
     return res.status(200).json({ 
         message: "Interesse cancelado com sucesso",
         leilaoId, 
-        usuarioId, 
-        cancelled: true 
+        usuarioId,
+        sseDesconectado: !temOutrosInteresses
     });
 });
 

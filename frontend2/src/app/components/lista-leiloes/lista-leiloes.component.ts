@@ -1,6 +1,6 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Leilao } from '../../models/leilao.model';
+import { Leilao } from '../../models/models';
 import { ApiService } from '../../services/api.service';
 
 @Component({
@@ -10,25 +10,21 @@ import { ApiService } from '../../services/api.service';
   templateUrl: './lista-leiloes.component.html',
   styleUrl: './lista-leiloes.component.css'
 })
-export class ListaLeiloesComponent implements OnChanges {
+export class ListaLeiloesComponent {
   @Input() leiloes: Leilao[] = [];
   @Input() usuarioId: string = '';
+  @Output() interesseRegistrado = new EventEmitter<boolean>();
+  @Output() interesseCancelado = new EventEmitter<boolean>();
 
   constructor(private apiService: ApiService) {}
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['leiloes'] && this.leiloes.length > 0) {
-      console.log('Leilões no componente lista-leiloes:', this.leiloes);
-      console.log('Primeiro leilão:', this.leiloes[0]);
-    }
-  }
-
   acompanhar(leilaoId: string): void {
-    console.log('Acompanhar chamado com leilaoId:', leilaoId);
     this.apiService.registrarInteresse(this.usuarioId, leilaoId).subscribe({
-      next: () => alert('Interesse registrado com sucesso!'),
+      next: (response) => {
+        alert('Interesse registrado com sucesso!');
+        this.interesseRegistrado.emit(response.deveConectarSSE);
+      },
       error: (err) => {
-        console.error('Erro ao registrar interesse:', err);
         alert('Erro ao registrar interesse');
       }
     });
@@ -36,9 +32,11 @@ export class ListaLeiloesComponent implements OnChanges {
 
   pararDeAcompanhar(leilaoId: string): void {
     this.apiService.cancelarInteresse(this.usuarioId, leilaoId).subscribe({
-      next: () => alert('Você parou de acompanhar este leilão'),
+      next: (response) => {
+        alert('Você parou de acompanhar este leilão');
+        this.interesseCancelado.emit(response.sseDesconectado);
+      },
       error: (err) => {
-        console.error('Erro ao cancelar interesse:', err);
         alert('Erro ao cancelar interesse');
       }
     });

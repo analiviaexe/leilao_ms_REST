@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Notificacao } from '../../models/notificacao.model';
+import { Notificacao } from '../../models/models';
 
 @Component({
   selector: 'app-notificacoes',

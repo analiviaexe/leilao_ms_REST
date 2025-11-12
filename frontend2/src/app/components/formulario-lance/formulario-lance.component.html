@@ -1,7 +1,7 @@
-<div class="formulario-lance">
+<div>
   <h3>Dar Lance (Apenas Leilões Ativos)</h3>
   
-  <div class="form-group">
+  <div>
     <label for="leilaoId">Selecione o Leilão Ativo:</label>
     <select 
       id="leilaoId"
@@ -10,15 +10,12 @@
     >
       <option value="">-- Selecione um leilão ativo --</option>
       <option *ngFor="let leilao of leiloesAtivos" [value]="leilao.id">
-        #{{ leilao.id }} - {{ leilao.nome }} (R$ {{ leilao.valorInicial }})
+        {{ leilao.nome }} - inicial em (R$ {{ leilao.valorInicial }})
       </option>
     </select>
-    <small style="color: #666;">
-      {{ leiloesAtivos.length }} leilão(ões) ativo(s) disponível(is)
-    </small>
   </div>
   
-  <div class="form-group">
+  <div>
     <label for="valor">Valor do Lance (R$):</label>
     <input 
       id="valor"
@@ -30,7 +27,7 @@
     />
   </div>
   
-  <button class="btn-enviar" (click)="enviarLance()" [disabled]="leiloesAtivos.length === 0">
+  <button (click)="enviarLance()" [disabled]="leiloesAtivos.length === 0">
     Enviar Lance
   </button>
 </div>

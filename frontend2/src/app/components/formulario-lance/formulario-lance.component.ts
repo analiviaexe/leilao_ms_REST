@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
-import { Leilao } from '../../models/leilao.model';
+import { Leilao } from '../../models/models';
 
 @Component({
   selector: 'app-formulario-lance',
@@ -42,12 +42,10 @@ export class FormularioLanceComponent {
       valor: this.valor
     }).subscribe({
       next: (response) => {
-        console.log('Lance enviado:', response);
         alert('Lance enviado com sucesso!');
         this.limparFormulario();
       },
       error: (err) => {
-        console.error('Erro ao enviar lance:', err);
         const mensagem = err.error?.error || 'Erro ao enviar lance';
         alert(mensagem);
       }

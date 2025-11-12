@@ -45,15 +45,7 @@ export class CriarLeilaoComponent implements OnInit {
   }
 
   criarLeilao(): void {
-    // Validação melhorada para aceitar valorInicial = 0
     if (!this.nome || !this.descricao || this.valorInicial === null || this.valorInicial === undefined || !this.inicio || !this.fim) {
-      console.log('Validação falhou:', {
-        nome: this.nome,
-        descricao: this.descricao,
-        valorInicial: this.valorInicial,
-        inicio: this.inicio,
-        fim: this.fim
-      });
       alert('Por favor, preencha todos os campos');
       return;
     }
@@ -63,7 +55,6 @@ export class CriarLeilaoComponent implements OnInit {
       return;
     }
 
-    // Converter datetime-local para formato Python: "YYYY-MM-DD HH:MM:SS"
     const inicioFormatado = this.converterParaFormatoPython(this.inicio);
     const fimFormatado = this.converterParaFormatoPython(this.fim);
 
@@ -75,25 +66,19 @@ export class CriarLeilaoComponent implements OnInit {
       fim: fimFormatado
     };
 
-    console.log('Enviando leilão:', leilao);
-
     this.apiService.criarLeilao(leilao).subscribe({
       next: (response) => {
-        console.log('Leilão criado:', response);
         alert('Leilão criado com sucesso!');
         this.limparFormulario();
         this.leilaoCriado.emit();
       },
       error: (err) => {
-        console.error('Erro ao criar leilão:', err);
         alert('Erro ao criar leilão');
       }
     });
   }
 
   converterParaFormatoPython(datetimeLocal: string): string {
-    // datetime-local: "2025-11-11T14:30"
-    // Python esperado: "2025-11-11 14:30:00"
     return datetimeLocal.replace('T', ' ') + ':00';
   }
 
