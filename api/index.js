@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 
-// CORS configurado para permitir Angular
+// config cors
 app.use(cors({
     origin: 'http://localhost:4200',
     credentials: true,
@@ -131,7 +131,6 @@ app.get("/sse/:usuarioId", (req, res) => {
     res.write(`: Conectado como usuário ${usuarioId}\n\n`);
     sse.sendSse(usuarioId, 'connected', { usuarioId, timestamp: new Date().toISOString() });
 
-    // Keep-alive para manter conexão SSE aberta
     const keepAlive = setInterval(() => {
         try {
             res.write(':\n\n');
@@ -154,13 +153,10 @@ app.post("/leiloes/interesse/:usuarioId/:leilaoId", (req, res) => {
         return res.status(400).json({ error: "Parâmetros obrigatórios: usuarioId, leilaoId" });
     }
 
-    // Adicionar interesse
     sse.addInteresse(usuarioId, leilaoId);
     
-    // Conectar SSE automaticamente se não estiver conectado
+    // se n tiver sse conectado
     if (!sse.isUserConnected(usuarioId)) {
-        // Criar uma resposta SSE fake para simular conexão via POST
-        // Na prática, o frontend deve fazer GET /sse/:usuarioId após o primeiro interesse
         console.log(`[SSE] Usuário ${usuarioId} precisa conectar SSE`);
     } else {
         sse.sendSse(usuarioId, 'interesse_registrado', { 
@@ -189,7 +185,7 @@ app.delete("/leiloes/interesse/:usuarioId/:leilaoId", (req, res) => {
 
     sse.removeInteresse(usuarioId, leilaoId);
     
-    // Verificar se usuário ainda tem algum interesse
+    // verifica se usr ainda tem algum interesse
     const temOutrosInteresses = sse.hasAnyInterest(usuarioId);
     
     if (sse.isUserConnected(usuarioId)) {
@@ -199,7 +195,7 @@ app.delete("/leiloes/interesse/:usuarioId/:leilaoId", (req, res) => {
             timestamp: new Date().toISOString() 
         });
         
-        // Se não tem mais interesses, desconectar SSE automaticamente
+        // Se nao, desconectar SSE automaticamente
         if (!temOutrosInteresses) {
             console.log(`[SSE] Usuário ${usuarioId} não tem mais interesses, fechando conexão SSE`);
             sse.closeConnection(usuarioId);

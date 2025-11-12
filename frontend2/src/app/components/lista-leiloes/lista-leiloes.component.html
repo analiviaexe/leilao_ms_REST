@@ -1,25 +1,20 @@
-<div class="lista-leiloes">
+<div>
+  <p *ngIf="leiloes.length === 0">Nenhum leilão ativo no momento</p>
   
-  <p *ngIf="leiloes.length === 0" class="vazio">Nenhum leilão ativo no momento</p>
-  
-  <div *ngFor="let leilao of leiloes" class="leilao-card">
-    <div class="leilao-header">
+  <div *ngFor="let leilao of leiloes">
+    <div>
       <strong>{{ leilao.nome }}</strong>
     </div>
     
-    <div class="leilao-info">
-        <p><strong>Descrição:</strong> {{ leilao.descricao }}</p>
+    <div>
+      <p><strong>Descrição:</strong> {{ leilao.descricao }}</p>
       <p><strong>Valor inicial:</strong> R$ {{ leilao.valorInicial }}</p>
       <p><strong>Último lance:</strong> {{ leilao.ultimoLance ? 'R$ ' + leilao.ultimoLance : 'Nenhum lance ainda' }}</p>
     </div>
     
-    <div class="leilao-acoes">
-      <button class="btn-acompanhar" (click)="acompanhar(leilao.id)">
-        Acompanhar leilão
-      </button>
-      <button class="btn-parar" (click)="pararDeAcompanhar(leilao.id)">
-        Parar de acompanhar
-      </button>
+    <div>
+      <button (click)="acompanhar(leilao.id)">Acompanhar leilão</button>
+      <button (click)="pararDeAcompanhar(leilao.id)">Parar de acompanhar</button>
     </div>
   </div>
 </div>

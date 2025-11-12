@@ -1,14 +1,14 @@
-<div class="notificacoes-container">
-  <div class="header">
+<div>
+  <div>
     <h3>Notificações</h3>
   </div>
   
-  <div *ngFor="let notif of notificacoes" class="notificacao-card">
-    <div class="notif-header">
-      <strong class="tipo">{{ notif.tipo }}</strong>
-      <span class="hora">{{ formatarHora(notif.timestamp) }}</span>
+  <div *ngFor="let notif of notificacoes">
+    <div style="display: flex; justify-content: space-between;">
+      <strong>{{ notif.tipo }}</strong>
+      <span>{{ formatarHora(notif.timestamp) }}</span>
     </div>
     
-    <div class="mensagem">{{ notif.mensagem }}</div>
+    <div>{{ notif.mensagem }}</div>
   </div>
 </div>

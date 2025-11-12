@@ -7,13 +7,11 @@
   
   <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 20px;">
     
-    <!-- COLUNA 1: Criar Leilão e Dar Lance -->
     <div style="display: flex; flex-direction: column; gap: 20px;">
       <app-criar-leilao (leilaoCriado)="onLeilaoCriado()"></app-criar-leilao>
       <app-formulario-lance [usuarioId]="usuarioId" [leiloes]="leiloes"></app-formulario-lance>
     </div>
     
-    <!-- COLUNA 2: Leilões Ativos -->
     <div>
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
         <h3 style="margin: 0;">Leilões Ativos</h3>
@@ -29,7 +27,6 @@
       </app-lista-leiloes>
     </div>
     
-    <!-- COLUNA 3: Notificações -->
     <div>
       <div style="border: 2px solid #333; padding: 10px; margin-bottom: 10px; display: flex; justify-content: space-between;">
         <h3 style="margin: 0 10px 0 0;">Status SSE</h3>

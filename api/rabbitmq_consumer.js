@@ -113,7 +113,7 @@ async function conectarRabbitMQ() {
                     const evento = JSON.parse(msg.content.toString());
                     console.log('status_pagamento recebido:', evento);
                     
-                    // Notificar o cliente específico
+                    // notifica o cliente específico
                     sse.sendSse(evento.user_id || evento.vencedor_id, 'status_pagamento', {
                         leilaoId: evento.leilao_id,
                         status: evento.status,
@@ -126,19 +126,16 @@ async function conectarRabbitMQ() {
             }
         }, { noAck: false });
                 
-        // Gerenciar eventos de conexão
         connection.on('error', (err) => {
             console.error('Erro na conexão:', err.message);
         });
         
         connection.on('close', () => {
-            console.log('Conexão fechada. Tentando reconectar em 5 segundos...');
             setTimeout(conectarRabbitMQ, 5000);
         });
         
     } catch (error) {
         console.error(' Erro ao conectar:', error.message);
-        console.log('Tentando reconectar em 5 segundos...');
         setTimeout(conectarRabbitMQ, 5000);
     }
 }

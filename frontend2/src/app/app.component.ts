@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { LoginComponent } from './components/login/login.component';
@@ -9,8 +9,7 @@ import { NotificacoesComponent } from './components/notificacoes/notificacoes.co
 
 import { ApiService } from './services/api.service';
 import { SseService } from './services/sse.service';
-import { Leilao } from './models/leilao.model';
-import { Notificacao } from './models/notificacao.model';
+import { Leilao, Notificacao } from './models/models';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -27,7 +26,7 @@ import { Subscription } from 'rxjs';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnDestroy {
   usuarioId: string = '';
   logado: boolean = false;
   leiloes: Leilao[] = [];
@@ -43,10 +42,6 @@ export class AppComponent implements OnInit, OnDestroy {
     private sseService: SseService
   ) {}
 
-  ngOnInit(): void {
-    // Inicialização
-  }
-
   ngOnDestroy(): void {
     this.sseService.desconectar();
     this.notificacoesSubscription?.unsubscribe();
@@ -56,15 +51,12 @@ export class AppComponent implements OnInit, OnDestroy {
   onUsuarioLogado(usuarioId: string): void {
     this.usuarioId = usuarioId;
     this.logado = true;
-    
-    // Carregar leilões
     this.carregarLeiloes();
   }
 
   onInteresseRegistrado(deveConectarSSE: boolean): void {
     this.interessesCount++;
     
-    // Conectar SSE automaticamente se backend indicar
     if (deveConectarSSE && !this.sseConectado) {
       this.conectarSSE();
     }
@@ -73,7 +65,6 @@ export class AppComponent implements OnInit, OnDestroy {
   onInteresseCancelado(sseDesconectado: boolean): void {
     this.interessesCount--;
     
-    // Atualizar estado se backend desconectou SSE
     if (sseDesconectado) {
       this.sseConectado = false;
       this.interessesCount = 0;
@@ -87,14 +78,12 @@ export class AppComponent implements OnInit, OnDestroy {
     
     this.sseService.conectar(this.usuarioId);
     
-    // Inscrever-se nas notificações
     this.notificacoesSubscription = this.sseService.obterNotificacoes().subscribe(
       (notificacao) => {
         this.notificacoes = [notificacao, ...this.notificacoes];
       }
     );
 
-    // Inscrever-se no status da conexão
     this.conexaoSubscription = this.sseService.obterStatusConexao().subscribe(
       (conectado) => {
         this.sseConectado = conectado;
@@ -112,11 +101,9 @@ export class AppComponent implements OnInit, OnDestroy {
   carregarLeiloes(): void {
     this.apiService.listarLeiloesAtivos().subscribe({
       next: (leiloes) => {
-        console.log('Leilões recebidos da API:', leiloes);
         this.leiloes = leiloes;
       },
       error: (err) => {
-        console.error('Erro ao carregar leilões:', err);
         alert('Erro ao carregar leilões');
       }
     });
