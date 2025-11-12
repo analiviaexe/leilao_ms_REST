@@ -70,7 +70,7 @@ export class SseService {
         const dados = JSON.parse(event.data);
         this.notificacoesSubject.next({
           tipo: 'leilao_vencedor',
-          mensagem: `Leilão ${dados.nome} finalizado! Vencedor: usuário ${dados.vencedorId} por R$ ${dados.valorFinal}`,
+          mensagem: `Leilão ${dados.leilaoId} finalizado! Vencedor: usuário ${dados.vencedorId} por R$ ${dados.valorFinal}`,
           ...dados
         });
       });
@@ -91,7 +91,7 @@ export class SseService {
       this.ngZone.run(() => {
         const dados = JSON.parse(event.data);
         const statusMsg = dados.status === 'aprovado' 
-          ? `Pagamento aprovado! Leilão ${dados.leilaoId} - R$ ${dados.valor}`
+          ? `Pagamento aprovado!`
           : `Pagamento recusado: ${dados.motivo || 'Erro no processamento'}`;
         
         this.notificacoesSubject.next({
