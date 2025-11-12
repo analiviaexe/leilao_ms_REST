@@ -4,6 +4,11 @@
     margin: 5px 0;
 }
 
+.notif-header {
+    display: flex;
+    justify-content: space-between;
+}
+
 .notificacao-card {
     padding: 8px;
     margin: 5px 0;

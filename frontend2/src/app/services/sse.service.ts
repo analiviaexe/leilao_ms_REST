@@ -81,7 +81,7 @@ export class SseService {
         console.log('[SSE] Leilão vencedor:', dados);
         this.notificacoesSubject.next({
           tipo: 'leilao_vencedor',
-          mensagem: `Leilão ${dados.leilaoId} finalizado! Vencedor: ${dados.vencedorId} com R$ ${dados.valorFinal}`,
+          mensagem: `Leilão ${dados.nome} finalizado! Vencedor: usuário ${dados.vencedorId} por R$ ${dados.valorFinal}`,
           ...dados
         });
       });

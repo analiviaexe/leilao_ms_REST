@@ -33,6 +33,7 @@ export class AppComponent implements OnInit, OnDestroy {
   leiloes: Leilao[] = [];
   notificacoes: Notificacao[] = [];
   sseConectado: boolean = false;
+  interessesCount: number = 0;
 
   private notificacoesSubscription?: Subscription;
   private conexaoSubscription?: Subscription;
@@ -56,10 +57,29 @@ export class AppComponent implements OnInit, OnDestroy {
     this.usuarioId = usuarioId;
     this.logado = true;
     
-    // NÃO conectar SSE automaticamente - usuário deve escolher explicitamente
-    
     // Carregar leilões
     this.carregarLeiloes();
+  }
+
+  onInteresseRegistrado(deveConectarSSE: boolean): void {
+    this.interessesCount++;
+    
+    // Conectar SSE automaticamente se backend indicar
+    if (deveConectarSSE && !this.sseConectado) {
+      this.conectarSSE();
+    }
+  }
+
+  onInteresseCancelado(sseDesconectado: boolean): void {
+    this.interessesCount--;
+    
+    // Atualizar estado se backend desconectou SSE
+    if (sseDesconectado) {
+      this.sseConectado = false;
+      this.interessesCount = 0;
+      this.notificacoesSubscription?.unsubscribe();
+      this.conexaoSubscription?.unsubscribe();
+    }
   }
 
   conectarSSE(): void {

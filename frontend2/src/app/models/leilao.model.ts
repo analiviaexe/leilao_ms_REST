@@ -4,4 +4,5 @@
   valorInicial: number;
   ultimoLance?: number;
   status: string;
+  descricao: string;
 }

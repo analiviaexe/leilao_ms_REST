@@ -55,6 +55,20 @@ function hasInterest(usuarioId, leilaoId) {
 }
 
 /**
+ * Verifica se usuário tem conexão SSE ativa
+ */
+function isUserConnected(usuarioId) {
+  return sseClients.has(usuarioId);
+}
+
+/**
+ * Verifica se usuário tem algum interesse ativo
+ */
+function hasAnyInterest(usuarioId) {
+  return userInterests.has(usuarioId) && userInterests.get(usuarioId).size > 0;
+}
+
+/**
  * Retorna todos os usuários interessados em um leilão
  */
 function getUsersInterestedIn(leilaoId) {
@@ -136,6 +150,8 @@ module.exports = {
   addInteresse,
   removeInteresse,
   hasInterest,
+  isUserConnected,
+  hasAnyInterest,
   getUsersInterestedIn,
   sendSse,
   notifyLeilaoEvent,

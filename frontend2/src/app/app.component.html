@@ -21,23 +21,20 @@
           🔄 Atualizar
         </button>
       </div>
-      <app-lista-leiloes [leiloes]="leiloes" [usuarioId]="usuarioId"></app-lista-leiloes>
+      <app-lista-leiloes 
+        [leiloes]="leiloes" 
+        [usuarioId]="usuarioId"
+        (interesseRegistrado)="onInteresseRegistrado($event)"
+        (interesseCancelado)="onInteresseCancelado($event)">
+      </app-lista-leiloes>
     </div>
     
-    <!-- COLUNA 3: Controle SSE + Notificações -->
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-      <div style="border: 2px solid #333; padding: 10px;">
-        <h3 style="margin: 0 0 10px 0;">Controle SSE</h3>
-        <div style="display: flex; flex-direction: column; gap: 5px;">
-          <button (click)="conectarSSE()" [disabled]="sseConectado" style="padding: 8px;">
-            Conectar Notificações
-          </button>
-          <button (click)="desconectarSSE()" [disabled]="!sseConectado" style="padding: 8px;">
-            Desconectar
-          </button>
-          <div style="margin-top: 5px; font-weight: bold; text-align: center;">
-            {{ sseConectado ? '🟢 Conectado' : '🔴 Desconectado' }}
-          </div>
+    <!-- COLUNA 3: Notificações -->
+    <div>
+      <div style="border: 2px solid #333; padding: 10px; margin-bottom: 10px; display: flex; justify-content: space-between;">
+        <h3 style="margin: 0 10px 0 0;">Status SSE</h3>
+        <div style="font-weight: bold; text-align: center;">
+          {{ sseConectado ? '🟢 Conectado' : '🔴 Desconectado' }}
         </div>
       </div>
       <app-notificacoes [notificacoes]="notificacoes" [conectado]="sseConectado"></app-notificacoes>
