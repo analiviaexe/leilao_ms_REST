@@ -31,9 +31,11 @@ def criar_transacao():
 
 def simular_pagamento(transacao_id, valor, vencedor_id, webhook_url):
 
+    status = random.choice(["aprovado", "recusado"])
+
     payload = {
         "transacao_id": transacao_id,
-        "status": "aprovado",
+        "status": status,
         "valor": valor,
         "comprador": {
             "id": vencedor_id,
