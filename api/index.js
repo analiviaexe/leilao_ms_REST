@@ -204,8 +204,7 @@ app.delete("/leiloes/interesse/:usuarioId/:leilaoId", (req, res) => {
     return res.status(200).json({ 
         message: "Interesse cancelado com sucesso",
         leilaoId, 
-        usuarioId,
-        sseDesconectado: !temOutrosInteresses
+        usuarioId
     });
 });
 

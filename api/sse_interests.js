@@ -34,16 +34,8 @@ function removeInteresse(usuarioId, leilaoId) {
   }
 }
 
-function hasInterest(usuarioId, leilaoId) {
-  return userInterests.has(usuarioId) && userInterests.get(usuarioId).has(leilaoId);
-}
-
 function isUserConnected(usuarioId) {
   return sseClients.has(usuarioId);
-}
-
-function hasAnyInterest(usuarioId) {
-  return userInterests.has(usuarioId) && userInterests.get(usuarioId).size > 0;
 }
 
 function getUsersInterestedIn(leilaoId) {
@@ -91,31 +83,12 @@ function notifyLeilaoEvent(leilaoId, eventName, data) {
   }
 }
 
-function closeConnection(usuarioId) {
-  const res = sseClients.get(usuarioId);
-  if (res) {
-    try {
-      res.end();
-    } catch (e) {
-      // ignore
-    }
-  }
-  
-  sseClients.delete(usuarioId);
-  userInterests.delete(usuarioId);
-  return true;
-}
-
 module.exports = {
   registerUserSSE,
   unregisterUserSSE,
   addInteresse,
   removeInteresse,
-  hasInterest,
   isUserConnected,
-  hasAnyInterest,
-  getUsersInterestedIn,
   sendSse,
-  notifyLeilaoEvent,
-  closeConnection
+  notifyLeilaoEvent
 };
